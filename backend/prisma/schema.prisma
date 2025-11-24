@@ -14,8 +14,48 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  name     String?
-  password String
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  name       String?
+  password   String
+  role       Role     @default(TECHNICIAN)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+}
+
+model Asset {
+  id            Int       @id @default(autoincrement())
+  name          String
+  category_id   Int
+  location      String?
+  status        Status    @default(ACTIVE)
+  purchase_date DateTime?
+  description   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  category AssetCategory @relation(fields: [category_id], references: [id])
+
+  @@map("assets")
+}
+
+enum Status {
+  ACTIVE
+  DOWN
+}
+
+model AssetCategory {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  assets Asset[]
+
+  @@map("asset_categories")
 }
