@@ -9,7 +9,7 @@ const createAssetCategory = asyncHandler(async (req, res) => {
   // Validation
   if (!name) {
     res.status(400);
-    throw new Error("All fields are required");
+    throw new Error("Name field is required");
   }
 
   // Check if category exists
@@ -18,6 +18,7 @@ const createAssetCategory = asyncHandler(async (req, res) => {
       name,
     },
   });
+
   if (assetCategoryExists) {
     res.status(400);
     throw new Error("Asset category exists");
@@ -29,10 +30,10 @@ const createAssetCategory = asyncHandler(async (req, res) => {
       name,
     },
   });
+
   res.status(201).json({
-    id: createdAssetCategory.id,
-    name: createdAssetCategory.name,
     message: "Asset category created successfully",
+    data: createdAssetCategory,
   });
 });
 
@@ -45,9 +46,8 @@ const getAssetCategoryById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Check if not a number
-  if (isNaN(id)) {
-    res.status(400);
-    throw new Error("Invalid ID format");
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ message: "Invalid ID format" });
   }
 
   // Find the category
@@ -70,9 +70,8 @@ const updateAssetCategory = asyncHandler(async (req, res) => {
   const { name } = req.body;
 
   // Validation
-  if (isNaN(id)) {
-    res.status(400);
-    throw new Error("Invalid ID format");
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ message: "Invalid ID format" });
   }
 
   if (!name) {
@@ -108,9 +107,8 @@ const deleteAssetCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Validation
-  if (isNaN(id)) {
-    res.status(400);
-    throw new Error("Invalid ID format");
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ message: "Invalid ID format" });
   }
 
   try {
@@ -118,6 +116,7 @@ const deleteAssetCategory = asyncHandler(async (req, res) => {
     const deletedAssetCategory = await prisma.assetCategory.delete({
       where: { id: Number(id) },
     });
+
     res.status(200).json({
       message: "The asset category deleted succesfully",
       data: deletedAssetCategory,
