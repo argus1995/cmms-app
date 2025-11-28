@@ -14,13 +14,15 @@ datasource db {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  name       String?
-  password   String
-  role       Role     @default(TECHNICIAN)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                     Int                     @id @default(autoincrement())
+  email                  String                  @unique
+  name                   String?
+  password               String
+  role                   Role                    @default(TECHNICIAN)
+  created_at             DateTime                @default(now())
+  updated_at             DateTime                @updatedAt
+  preventiveMaintenances PreventiveMaintenance[]
+  workOrders             WorkOrder[]
 
   @@map("users")
 }
@@ -28,6 +30,7 @@ model User {
 enum Role {
   ADMIN
   TECHNICIAN
+  REQUESTER
 }
 
 model Asset {
@@ -41,7 +44,8 @@ model Asset {
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
-  category AssetCategory @relation(fields: [category_id], references: [id])
+  category               AssetCategory           @relation(fields: [category_id], references: [id])
+  preventiveMaintenances PreventiveMaintenance[]
 
   @@map("assets")
 }
@@ -58,4 +62,54 @@ model AssetCategory {
   assets Asset[]
 
   @@map("asset_categories")
+}
+
+model PreventiveMaintenance {
+  id             Int      @id @default(autoincrement())
+  asset_id       Int
+  title          String
+  description    String
+  frequency      String
+  next_due_date  DateTime
+  last_done_date DateTime
+  assigned_to    Int?
+  is_active      Status   @default(ACTIVE)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  asset      Asset       @relation(fields: [asset_id], references: [id])
+  user       User?       @relation(fields: [assigned_to], references: [id])
+  workOrders WorkOrder[]
+
+  @@map("preventive_maintenances")
+}
+
+model WorkOrder {
+  id             Int        @id @default(autoincrement())
+  pm_schedule_id Int?
+  asset_id       Int
+  title          String
+  description    String
+  status         WorkStatus @default(OPEN)
+  priority       Priority   @default(MEDIUM)
+  requested_by   Int
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  pm_schedule PreventiveMaintenance? @relation(fields: [pm_schedule_id], references: [id])
+  user        User                   @relation(fields: [requested_by], references: [id])
+
+  @@map("work_orders")
+}
+
+enum WorkStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
 }
