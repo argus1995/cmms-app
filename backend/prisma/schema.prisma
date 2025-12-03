@@ -23,14 +23,9 @@ model User {
   updated_at             DateTime                @updatedAt
   preventiveMaintenances PreventiveMaintenance[]
   workOrders             WorkOrder[]
+  requests               Request[]
 
   @@map("users")
-}
-
-enum Role {
-  ADMIN
-  TECHNICIAN
-  REQUESTER
 }
 
 model Asset {
@@ -46,13 +41,10 @@ model Asset {
 
   category               AssetCategory           @relation(fields: [category_id], references: [id])
   preventiveMaintenances PreventiveMaintenance[]
+  workOrders             WorkOrder[]
+  requests               Request[]
 
   @@map("assets")
-}
-
-enum Status {
-  ACTIVE
-  DOWN
 }
 
 model AssetCategory {
@@ -66,7 +58,6 @@ model AssetCategory {
 
 model PreventiveMaintenance {
   id             Int      @id @default(autoincrement())
-  asset_id       Int
   title          String
   description    String
   frequency      String
@@ -77,6 +68,7 @@ model PreventiveMaintenance {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
+  asset_id   Int
   asset      Asset       @relation(fields: [asset_id], references: [id])
   user       User?       @relation(fields: [assigned_to], references: [id])
   workOrders WorkOrder[]
@@ -84,32 +76,75 @@ model PreventiveMaintenance {
   @@map("preventive_maintenances")
 }
 
+model Request {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String?
+  asset        Asset?        @relation(fields: [asset_id], references: [id])
+  asset_id     Int?
+  priority     Priority      @default(MEDIUM)
+  status       RequestStatus @default(PENDING)
+  requester    User          @relation(fields: [requester_id], references: [id])
+  requester_id Int
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  workOrders WorkOrder?
+
+  @@map("requests")
+}
+
 model WorkOrder {
-  id             Int        @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+
+  // Work order can come from a request or a PM
+  request        Request?               @relation(fields: [request_id], references: [id])
+  request_id     Int?                   @unique
+  pm_schedule    PreventiveMaintenance? @relation(fields: [pm_schedule_id], references: [id])
   pm_schedule_id Int?
+  asset          Asset                  @relation(fields: [asset_id], references: [id])
   asset_id       Int
-  title          String
-  description    String
+  assigned_to    User?                  @relation(fields: [assigned_to_id], references: [id])
+  assigned_to_id Int?
+
   status         WorkStatus @default(OPEN)
-  priority       Priority   @default(MEDIUM)
-  requested_by   Int
+  startDate      DateTime?
+  completionDate DateTime?
   created_at     DateTime   @default(now())
   updated_at     DateTime   @updatedAt
-
-  pm_schedule PreventiveMaintenance? @relation(fields: [pm_schedule_id], references: [id])
-  user        User                   @relation(fields: [requested_by], references: [id])
 
   @@map("work_orders")
 }
 
-enum WorkStatus {
-  OPEN
-  IN_PROGRESS
-  COMPLETED
+enum Role {
+  ADMIN
+  SUPERVISOR
+  TECHNICIAN
+  REQUESTER
 }
 
 enum Priority {
   HIGH
   MEDIUM
   LOW
+}
+
+enum Status {
+  ACTIVE
+  DOWN
+}
+
+enum WorkStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
